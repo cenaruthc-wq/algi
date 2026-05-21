@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algeblocks - Interactive Algebra Learning</title>
+    <style>
+        /* ========== YOUR EXISTING STYLES (unchanged, but kept for completeness) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        :root { --x-blue: #3b82f6; --y-orange: #f97316; --z-green: #22c55e; --constant-brown: #8B4513; --accent-yellow: #facc15; --light-bg: rgba(255,255,255,0.95); --text-dark: #1e293b; --shadow: 0 20px 40px -15px rgba(0,0,0,0.3); --border-radius: 24px; }
+        .navbar { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 1rem 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .logo { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--x-blue), var(--y-orange), var(--z-green), var(--constant-brown)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-links { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .nav-links a { text-decoration: none; color: var(--text-dark); font-weight: 600; padding: 0.5rem 1rem; border-radius: 30px; transition: all 0.3s; font-size: 0.9rem; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); cursor: pointer; }
+        .nav-links a:hover { background: linear-gradient(135deg, var(--x-blue), var(--y-orange)); color: white; transform: translateY(-2px); }
+        .page-container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .section { display: none; animation: fadeIn 0.5s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: var(--light-bg); border-radius: var(--border-radius); padding: 2rem; box-shadow: var(--shadow); margin: 2rem 0; }
+        .lesson-tabs { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .tab-btn { background: #f1f5f9; border: none; padding: 0.8rem 1.8rem; border-radius: 40px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; color: var(--text-dark); }
+        .tab-btn:hover { background: #e2e8f0; transform: translateY(-2px); }
+        .tab-btn.active { background: linear-gradient(135deg, var(--x-blue), var(--y-orange)); color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        .block { display: inline-block; border-radius: 12px; margin: 3px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); cursor: grab; transition: all 0.2s; border: 2px solid rgba(255,255,255,0.3); }
+        .block:active { cursor: grabbing; transform: scale(0.95); }
+        .block:hover { transform: scale(1.1); }
+        .block-power1 { width: 35px; height: 35px; }
+        .block-power2 { width: 40px; height: 40px; }
+        .block-power3 { width: 45px; height: 45px; }
+        .block-power4 { width: 50px; height: 50px; }
+        .block-power5 { width: 55px; height: 55px; }
+        .block-power6 { width: 60px; height: 60px; }
+        .block-power7 { width: 65px; height: 65px; }
+        .block-blue { background: var(--x-blue); }
+        .block-orange { background: var(--y-orange); }
+        .block-green { background: var(--z-green); }
+        .block-brown { background: var(--constant-brown); }
+        .block-outline { background: transparent; border: 4px solid; }
+        .block-outline.block-blue { border-color: var(--x-blue); background: rgba(59,130,246,0.1); }
+        .block-outline.block-orange { border-color: var(--y-orange); background: rgba(249,115,22,0.1); }
+        .block-outline.block-green { border-color: var(--z-green); background: rgba(34,197,94,0.1); }
+        .block-outline.block-brown { border-color: var(--constant-brown); background: rgba(139,69,19,0.1); }
+        .cancelled-block { position: relative; overflow: visible; }
+        .cancelled-block::after { content: ""; position: absolute; top: 50%; left: -20%; width: 140%; height: 3px; background: #000000; transform: rotate(45deg) translateY(-50%); z-index: 99; pointer-events: none; box-shadow: 0 0 2px rgba(0,0,0,0.2); }
+        .problem-box, .drag-area { background: white; border-radius: 20px; padding: 2rem; margin: 2rem 0; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        #problemNumber { color: var(--x-blue); font-size: 1.5rem; margin-bottom: 1rem; }
+        #problem { font-size: 2.5rem; font-weight: 700; margin: 1rem 0; color: var(--text-dark); }
+        #arrow { font-size: 2rem; color: var(--y-orange); margin: 1rem 0; }
+        #coloredGiven { background: #ffcc80; padding: 2rem; border-radius: 15px; font-size: 2rem; border: 3px solid #e2e8f0; margin: 1rem 0; }
+        .process-container { background: #f1f5f9; padding: 2rem; border-radius: 20px; margin: 2rem 0; }
+        .process-grid { display: flex; flex-direction: column; gap: 1.5rem; margin: 1rem 0; }
+        .term-card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-top: 8px solid; height: fit-content; width: 100%; }
+        .card-x { border-top-color: var(--x-blue); }
+        .card-y { border-top-color: var(--y-orange); }
+        .card-z { border-top-color: var(--z-green); }
+        .card-const { border-top-color: var(--constant-brown); }
+        .card-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .power-indicator { font-size: 0.8rem; background: #e2e8f0; padding: 0.2rem 0.6rem; border-radius: 30px; }
+        .term-item { display: flex; align-items: center; gap: 0.8rem; margin: 0.8rem 0; padding: 0.8rem; background: #f8fafc; border-radius: 12px; flex-wrap: wrap; justify-content: flex-start; }
+        .term-text { font-size: 1.1rem; font-weight: 600; min-width: 80px; }
+        .blocks-container { display: flex; flex-wrap: wrap; gap: 0.3rem; flex: 1; justify-content: flex-start; }
+        .combine-section { background: #e6f7ff; border: 2px dashed var(--x-blue); padding: 1rem; border-radius: 12px; margin-top: 1rem; display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+        .combine-label { font-weight: 600; }
+        .combine-result { background: #86efac; padding: 0.5rem 1rem; border-radius: 40px; font-size: 1.2rem; font-weight: 700; color: #166534; }
+        .final-answer-box { background: #86efac; padding: 1.5rem; border-radius: 15px; text-align: center; margin: 2rem 0; }
+        .final-answer-box h3 { color: #166534; margin-bottom: 0.5rem; }
+        #finalAnswerDisplay, #wp-finalAnswer { font-size: 2.5rem; font-weight: 700; color: #166534; }
+        .btn { padding: 1rem 2.5rem; border: none; border-radius: 60px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; margin: 0.5rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn-primary { background: linear-gradient(135deg, var(--x-blue), var(--y-orange)); color: white; }
+        .btn-secondary { background: white; color: var(--text-dark); }
+        .btn-success { background: var(--z-green); color: white; }
+        .btn:hover { transform: translateY(-5px); }
+        .drag-drop-container { display: flex; flex-direction: column; gap: 2rem; margin: 2rem 0; }
+        .block-palette { background: white; backdrop-filter: blur(10px); padding: 1.5rem; border-radius: var(--border-radius); }
+        .palette-row { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-around; }
+        .palette-section { flex: 1 1 180px; padding: 1rem; background: rgba(255,255,255,0.15); border-radius: 20px; }
+        .palette-title { color: black; font-weight: 700; margin-bottom: 1rem; text-align: center; }
+        .blocks-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+        .block-wrapper { display: inline-flex; flex-direction: column; align-items: center; margin: 0 4px; }
+        .block-label { font-size: 0.7rem; background: #eef2ff; padding: 2px 6px; border-radius: 20px; margin-top: 2px; font-weight: 600; color: #1e293b; }
+        .work-area { background: rgba(255,255,255,0.95); border-radius: var(--border-radius); padding: 2rem; }
+        .problem-display { font-size: 2rem; text-align: center; padding: 2rem; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 20px; margin-bottom: 2rem; font-weight: 700; }
+        .drop-columns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .term-column { background: #f8fafc; border-radius: 20px; padding: 1rem; min-height: 200px; border: 3px dashed #cbd5e1; }
+        .column-header { font-size: 1.2rem; font-weight: 700; padding: 0.6rem; border-radius: 15px; margin-bottom: 1rem; color: white; text-align: center; }
+        .x-header { background: var(--x-blue); }
+        .y-header { background: var(--y-orange); }
+        .z-header { background: var(--z-green); }
+        .const-header { background: var(--constant-brown); }
+        .drop-zone { min-height: 150px; padding: 0.5rem; background: rgba(255,255,255,0.5); border-radius: 15px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .answer-input { width: 80%; padding: 1rem; font-size: 1.3rem; border: 3px solid #e2e8f0; border-radius: 60px; margin: 1rem 0; text-align: center; }
+        .feedback { font-size: 1.3rem; margin: 1rem 0; padding: 1rem; border-radius: 60px; display: none; }
+        .feedback.correct { background: #86efac; color: #166534; display: block; }
+        .feedback.incorrect { background: #fecaca; color: #991b1b; display: block; }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 1rem 2rem; border-radius: 60px; margin-bottom: 2rem; }
+        .timer { font-size: 2.5rem; font-weight: 800; color: var(--y-orange); font-family: monospace; }
+        .done-btn { background: var(--z-green); color: white; padding: 1rem 3rem; border-radius: 60px; font-weight: 700; border: none; cursor: pointer; }
+        .home-page { min-height: 85vh; display: flex; align-items: center; justify-content: center; position: relative; }
+        .hero { max-width: 1400px; width: 100%; position: relative; z-index: 2; }
+        .cover-container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 3rem; }
+        .title-section { flex: 1.2; text-align: center; min-width: 280px; }
+        .title-section h1 { font-size: 5rem; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #1dd1a1, #5f27cd, #ff6b6b); background-size: 300% 300%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: gradientFlow 4s ease infinite; text-shadow: 3px 3px 0 rgba(0,0,0,0.5), 0 0 18px rgba(255,255,255,0.9), 0 0 28px rgba(255,255,255,0.7); margin-bottom: 1rem; transition: transform 0.3s; }
+        .title-section h1:hover { transform: scale(1.03); text-shadow: 4px 4px 0 rgba(0,0,0,0.6), 0 0 25px rgba(255,255,255,1), 0 0 35px rgba(255,255,255,0.9); }
+        @keyframes gradientFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .title-section h3 { font-size: 1.8rem; font-weight: 700; color: #fff; text-shadow: 0 0 10px #ff9900, 0 0 20px #ff6600, 2px 2px 8px rgba(0,0,0,0.6); line-height: 1.4; max-width: 90%; margin: 0 auto; animation: gentleFloat 3s ease-in-out infinite; letter-spacing: 1px; }
+        @keyframes gentleFloat { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+        .title-section h3:hover { animation: none; transform: scale(1.02); text-shadow: 0 0 20px #ffcc00, 0 0 30px #ff9900; }
+        .cover-image { flex: 0.8; display: flex; justify-content: center; position: relative; }
+        .cover-image img { width: 350px; height: 350px; border-radius: 50%; object-fit: cover; border: 4px solid rgba(255,255,255,0.9); box-shadow: 0 20px 30px rgba(0,0,0,0.3); transition: transform 0.3s; }
+        .cover-image img:hover { transform: scale(1.02); }
+        .floating-blocks-home { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .float-block { position: absolute; animation: floatAround 8s ease-in-out infinite; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2)); }
+        @keyframes floatAround { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } 100% { transform: translateY(0px) rotate(0deg); } }
+        .home-page .floating-blocks-home .block { cursor: default; opacity: 0.85; }
+        .home-page .floating-blocks-home .block:hover { transform: none; opacity: 1; }
+        .key-points { background: linear-gradient(135deg, #f8fafc, #e2e8f0); border-radius: 30px; padding: 2rem; margin: 2rem 0; }
+        .key-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .key-card { background: white; padding: 1.5rem; border-radius: 20px; border-left: 5px solid var(--x-blue); }
+        .contact-info { background: #f1f5f9; padding: 1.5rem; border-radius: 20px; text-align: center; }
+        footer { text-align: center; padding: 2rem; color: rgba(255,255,255,0.8); }
+        .power-row { display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; margin: 1rem 0; }
+        .power-group { text-align: center; background: rgba(255,255,255,0.5); padding: 1rem; border-radius: 15px; }
+        .game-timer { font-size: 2rem; font-weight: 800; color: var(--y-orange); background: #fff7ed; padding: 0.5rem 2rem; border-radius: 60px; font-family: monospace; display: inline-block; margin-bottom: 1rem; }
+        .pretest-timer { font-size: 2rem; font-weight: 800; color: var(--y-orange); background: #fff7ed; padding: 0.5rem 2rem; border-radius: 60px; font-family: monospace; display: inline-block; margin-bottom: 1rem; }
+        .lesson-nav-buttons { display: flex; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; justify-content: center; }
+        .word-problem-text { background: white; padding: 2rem; border-radius: 20px; margin: 2rem 0; text-align: center; font-size: 1.8rem; line-height: 1.5; font-weight: 500; border: 3px solid var(--x-blue); }
+        .given-label { font-size: 1.8rem; font-weight: 700; color: var(--x-blue); margin-bottom: 1rem; }
+        .wp-expression, .wp-given { background: white; padding: 1.5rem; border-radius: 20px; font-size: 1.8rem; text-align: center; margin: 1rem 0; border: 3px solid #e2e8f0; }
+        .wp-colored { background: #f8fafc; padding: 1.5rem; border-radius: 15px; font-size: 1.8rem; border: 3px solid var(--y-orange); margin: 1rem 0; text-align: center; }
+        @media (max-width: 768px) { .cover-container { flex-direction: column; text-align: center; } .title-section h1 { font-size: 2.8rem; text-shadow: 2px 2px 0 rgba(0,0,0,0.5), 0 0 12px rgba(255,255,255,0.9), 0 0 20px rgba(255,255,255,0.7); } .title-section h3 { font-size: 1.2rem; } .cover-image img { width: 220px; height: 220px; } .drop-columns { grid-template-columns: 1fr; } .tab-btn { padding: 0.5rem 1rem; font-size: 0.8rem; } }
+        .elimination-row { background: #fef9e3; padding: 12px; border-radius: 16px; margin: 12px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 15px; }
+        .elim-blocks { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .elim-label { font-weight: bold; background: #fed7aa; padding: 4px 12px; border-radius: 40px; }
+        .vs-icon { font-size: 1.5rem; font-weight: bold; }
+        .answer-key { background: #f8fafc; border-radius: 20px; padding: 1.5rem; margin-top: 1.5rem; text-align: left; border: 2px solid var(--x-blue); }
+        .answer-key h3 { color: var(--x-blue); margin-bottom: 1rem; text-align: center; }
+        .answer-key ol { margin-left: 1.5rem; }
+        .answer-key li { margin: 0.5rem 0; font-family: monospace; font-size: 1rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">ALGEBLOCKS</div>
+        <div class="nav-links">
+            <a href="#" onclick="showSection('home')">🏠 HOME</a>
+            <a href="#" onclick="showSection('pretest')">📝 PRE-TEST</a>
+            <a href="#" onclick="showSection('lesson')">📚 LESSON PROPER</a>
+            <a href="#" onclick="showSection('posttest')">📋 POST-TEST</a>
+            <a href="#" onclick="showSection('games')">🎮 GAMES</a>
+            <a href="#" onclick="showSection('closing')">👋 CLOSING PAGE</a>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <!-- HOME PAGE (unchanged) -->
+        <div id="home" class="section active">
+            <div class="home-page">
+                <div class="hero">
+                    <div class="cover-container">
+                        <div class="title-section">
+                            <h1>ALGEBLOCKS</h1>
+                            <h3>A Color Coding and Block Representation Approach<br>in Simplifying Algebraic Expressions</h3>
+                        </div>
+                        <div class="cover-image">
+                            <img src="https://i.imgur.com/KB896kt.jpeg" alt="Algeblocks Cover">
+                        </div>
+                    </div>
+                </div>
+                <div class="floating-blocks-home">
+                    <!-- X blocks -->
+                    <div class="float-block" style="top: 5%; left: 2%; animation-duration: 7s;"><div class="block block-blue block-power3"></div></div>
+                    <div class="float-block" style="top: 15%; left: 85%; animation-duration: 9s;"><div class="block block-blue block-outline block-power2"></div></div>
+                    <div class="float-block" style="top: 30%; left: 10%; animation-duration: 11s;"><div class="block block-blue block-power4"></div></div>
+                    <div class="float-block" style="top: 45%; left: 92%; animation-duration: 6s;"><div class="block block-blue block-outline block-power1"></div></div>
+                    <div class="float-block" style="top: 60%; left: 5%; animation-duration: 8s;"><div class="block block-blue block-power5"></div></div>
+                    <div class="float-block" style="top: 75%; left: 88%; animation-duration: 10s;"><div class="block block-blue block-outline block-power3"></div></div>
+                    <div class="float-block" style="top: 85%; left: 15%; animation-duration: 7.5s;"><div class="block block-blue block-power2"></div></div>
+                    <!-- Y blocks -->
+                    <div class="float-block" style="top: 8%; left: 20%; animation-duration: 8.5s;"><div class="block block-orange block-power3"></div></div>
+                    <div class="float-block" style="top: 22%; left: 75%; animation-duration: 9.5s;"><div class="block block-orange block-outline block-power4"></div></div>
+                    <div class="float-block" style="top: 38%; left: 18%; animation-duration: 6.5s;"><div class="block block-orange block-power1"></div></div>
+                    <div class="float-block" style="top: 52%; left: 80%; animation-duration: 10.5s;"><div class="block block-orange block-outline block-power2"></div></div>
+                    <div class="float-block" style="top: 68%; left: 12%; animation-duration: 7.2s;"><div class="block block-orange block-power4"></div></div>
+                    <div class="float-block" style="top: 82%; left: 78%; animation-duration: 8.8s;"><div class="block block-orange block-outline block-power1"></div></div>
+                    <!-- Z blocks -->
+                    <div class="float-block" style="top: 12%; left: 45%; animation-duration: 9.2s;"><div class="block block-green block-power2"></div></div>
+                    <div class="float-block" style="top: 28%; left: 60%; animation-duration: 7.8s;"><div class="block block-green block-outline block-power3"></div></div>
+                    <div class="float-block" style="top: 42%; left: 35%; animation-duration: 11s;"><div class="block block-green block-power5"></div></div>
+                    <div class="float-block" style="top: 58%; left: 55%; animation-duration: 6.8s;"><div class="block block-green block-outline block-power1"></div></div>
+                    <div class="float-block" style="top: 72%; left: 40%; animation-duration: 9.5s;"><div class="block block-green block-power3"></div></div>
+                    <div class="float-block" style="top: 88%; left: 65%; animation-duration: 7.3s;"><div class="block block-green block-outline block-power2"></div></div>
+                    <!-- Constants -->
+                    <div class="float-block" style="top: 3%; left: 70%; animation-duration: 8s;"><div class="block block-brown block-power1"></div></div>
+                    <div class="float-block" style="top: 18%; left: 30%; animation-duration: 10s;"><div class="block block-brown block-outline block-power1"></div></div>
+                    <div class="float-block" style="top: 34%; left: 95%; animation-duration: 7.2s;"><div class="block block-brown block-power1"></div></div>
+                    <div class="float-block" style="top: 50%; left: 25%; animation-duration: 9.8s;"><div class="block block-brown block-outline block-power1"></div></div>
+                    <div class="float-block" style="top: 65%; left: 70%; animation-duration: 8.5s;"><div class="block block-brown block-power1"></div></div>
+                    <div class="float-block" style="top: 80%; left: 50%; animation-duration: 11s;"><div class="block block-brown block-outline block-power1"></div></div>
+                    <div class="float-block" style="top: 95%; left: 10%; animation-duration: 6s;"><div class="block block-blue block-power1"></div></div>
+                    <div class="float-block" style="top: 10%; left: 98%; animation-duration: 9s;"><div class="block block-orange block-power2"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRE-TEST (unchanged) -->
+        <div id="pretest" class="section">
+            <div class="card">
+                <h1 style="font-size: 3rem; text-align: center;">📝 PRE-TEST</h1>
+                <div style="text-align:center; margin: 1rem 0;"><div class="pretest-timer" id="pretestTimer">25:00</div></div>
+                <div id="pretest-question-container">
+                    <h2 style="text-align:center;">Problem <span id="pretestProblemNum">1</span>/15</h2>
+                    <p style="font-size:1.2rem;text-align:center;">Simplify the following expressions.</p>
+                    <div style="background:#f8fafc; padding:1.5rem; border-radius:20px; margin:1rem 0;"><p style="font-size:1.8rem;text-align:center; font-weight:bold;" id="pretest-question-text"></p></div>
+                    <input type="text" id="pretest-answer" class="answer-input" placeholder="Your simplified answer...">
+                    <div style="display:flex; justify-content:center; gap:1rem;">
+                        <button class="btn btn-secondary" onclick="nextPretestQuestion()">NEXT ▶</button>
+                        <button class="btn btn-secondary" onclick="prevPretestQuestion()">◀ PREVIOUS</button>
+                    </div>
+                </div>
+                <div style="text-align:center; margin-top:2rem;"><button class="btn btn-primary" onclick="submitPretest()" style="background: var(--z-green);">📋 DONE - SUBMIT TEST</button></div>
+                <div id="pretest-score-display" style="text-align:center; margin-top:2rem; font-weight:bold; font-size:1.3rem;"></div>
+                <div id="pretest-answer-key" class="answer-key" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- ========== LESSON PROPER - FULLY FUNCTIONAL (FIXED TABS) ========== -->
+        <div id="lesson" class="section">
+            <div class="card">
+                <h1 style="font-size: 3rem; text-align: center; margin-bottom: 1.5rem;">📚 LESSON PROPER</h1>
+                <div class="lesson-tabs">
+                    <button class="tab-btn active" data-tab="goals">🎯 GOALS</button>
+                    <button class="tab-btn" data-tab="topic">📖 TOPIC</button>
+                    <button class="tab-btn" data-tab="howitworks">🎨 HOW ALGEBLOCKS WORKS</button>
+                    <button class="tab-btn" data-tab="practice">✏️ PRACTICE EXERCISE</button>
+                    <button class="tab-btn" data-tab="dragdrop">🖱️ ACTIVITY: DRAG AND DROP ME</button>
+                    <button class="tab-btn" data-tab="wordproblems">📝 WORD PROBLEMS</button>
+                </div>
+
+                <!-- GOALS TAB -->
+                <div id="goals-tab" class="tab-content active">
+                    <div class="card" style="background: #ffcc80;">
+                        <h1 style="font-size: 3rem; text-align: center;">LEARNING COMPETENCY</h1>
+                        <div style="background:#e8f4fc; padding:2rem; border-radius:20px; font-size:1.5rem; text-align:center; margin:2rem 0;">Know how to add and subtract polynomials (M7AL-IId-2)</div>
+                        <h2 style="margin:2rem 0 1rem;">Learning Objectives. At the end of the discussion, the students are expected to:</h2>
+                        <div style="background:#fff4e5; padding:1.5rem; border-radius:20px; margin-bottom:1rem;font-size:1.5rem">🟦 Understands the process and concept through the use of color coding and block representation in simplifying algebraic expression involving addition and subtraction of polynomials</div>
+                        <div style="background:#e5f7e5; padding:1.5rem; border-radius:20px;font-size:1.5rem">🟧 Simplify given problems in algebraic expressions.</div>
+                    </div>
+                </div>
+
+                <!-- TOPIC TAB -->
+                <div id="topic-tab" class="tab-content">
+                    <div class="card">
+                        <div class="lesson-nav-buttons">
+                            <button class="btn btn-primary" onclick="showTopicSection('terms')">📖 TERMS & DEFINITIONS</button>
+                            <button class="btn btn-primary" onclick="showTopicSection('rules')">📐 RULES FOR OPERATIONS</button>
+                            <button class="btn btn-primary" onclick="showTopicSection('examples')">💡 EXAMPLES</button>
+                        </div>
+                        <div id="terms-section" class="topic-section">
+                            <h2 style="color: var(--x-blue);text-align: center;">Algebraic Expression</h2>
+                            <p style="font-size:1.2rem;margin-top:2rem;">Expression in mathematics that combine variables, constant and arithmetic operations to show relations between quantities.</p>
+                            <h2 style="color: var(--y-orange); margin-top:3rem;text-align: center;">Polynomial</h2>
+                            <p style="font-size:1.2rem;margin-top:2rem;">Expression of terms with constants and variables raised to non-negative exponents.</p>
+                        </div>
+                        <div id="rules-section" class="topic-section" style="display:none;">
+                            <h2 style="color: var(--constant-brown);text-align: center;">Adding Polynomials</h2>     
+			    <p style="font-size:1.2rem;margin-top:2rem;">To add polynomials simply combine the like terms or similar terms. To combine similar terms, get the sum of numerical coefficient and copy the same numerical coefficient then simplify.</p>
+                            <p style="font-size:1.2rem;"><strong>Example:</strong> (5z + 12)+(3z+2) = (5z+3z=8z)+ (12+2=14) = 8z+14</p>
+		            <h2 style="color: var(--constant-brown); margin-top:3rem;text-align: center;">Subtracting Polynomials</h2>
+                            <p style="font-size:1.2rem;margin-top:2rem;">To subtract a polynomial to another polynomial, change the sign of the subtrahend and proceed to addition, after combine the like terms then simplify</p>
+                            <p style="font-size:1.2rem;"><strong>Example:</strong> 5z - 12z = 5z + (-12z) = -7z</p>
+                        </div>
+                        <div id="examples-section" class="topic-section" style="display:none;">
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:1rem;">
+                                <div style="background:#f0f0f0; padding:1.5rem; border-radius:15px;font-size:1.2rem;">(2x+3)+(4x+1)= 6x+4</div>
+                                <div style="background:#f0f0f0; padding:1.5rem; border-radius:15px;font-size:1.2rem;">(5x-2)-(3x+1)= 2x-3</div>
+                                <div style="background:#f0f0f0; padding:1.5rem; border-radius:15px;font-size:1.2rem;">(3x²+2x)+(x²-x)=4x²+x</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HOW IT WORKS TAB -->
+                <div id="howitworks-tab" class="tab-content">
+                    <div style="background:#e2e8f0; padding:2rem; border-radius:20px;">
+                        <h2>🎨 COLOR CODING</h2>
+                        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin:20px 0;">
+                            <div><span class="block block-blue block-power2"></span> BLUE = X Variable</div>
+                            <div><span class="block block-orange block-power2"></span> ORANGE = Y Variable</div>
+                            <div><span class="block block-green block-power2"></span> GREEN = Z Variable</div>
+                            <div><span class="block block-brown block-power2"></span> BROWN = Constant</div>
+                        </div>
+                        <h2>➕ POSITIVE vs NEGATIVE</h2>
+                        <div style="display: flex; gap: 30px; justify-content: center; margin:20px 0;">
+                            <div><span class="block block-blue block-power3"></span> Positive Term</div>
+                            <div><span class="block block-blue block-outline block-power3"></span> Negative Term</div>
+                        </div>
+                        <h2>📐 BLOCKS BY EXPONENT (Increasing Size) - X VARIABLE</h2>
+                        <div class="power-row"><div class="power-group"><span class="block block-blue block-power1"></span><br>x¹</div><div class="power-group"><span class="block block-blue block-power2"></span><br>x²</div><div class="power-group"><span class="block block-blue block-power3"></span><br>x³</div><div class="power-group"><span class="block block-blue block-power4"></span><br>x⁴</div><div class="power-group"><span class="block block-blue block-power5"></span><br>x⁵</div><div class="power-group"><span class="block block-blue block-power6"></span><br>x⁶</div><div class="power-group"><span class="block block-blue block-power7"></span><br>x⁷</div></div>
+                        <h2>📐 BLOCKS BY EXPONENT - Y VARIABLE</h2>
+                        <div class="power-row"><div class="power-group"><span class="block block-orange block-power1"></span><br>y¹</div><div class="power-group"><span class="block block-orange block-power2"></span><br>y²</div><div class="power-group"><span class="block block-orange block-power3"></span><br>y³</div><div class="power-group"><span class="block block-orange block-power4"></span><br>y⁴</div><div class="power-group"><span class="block block-orange block-power5"></span><br>y⁵</div><div class="power-group"><span class="block block-orange block-power6"></span><br>y⁶</div><div class="power-group"><span class="block block-orange block-power7"></span><br>y⁷</div></div>
+                        <h2>📐 BLOCKS BY EXPONENT - Z VARIABLE</h2>
+                        <div class="power-row"><div class="power-group"><span class="block block-green block-power1"></span><br>z¹</div><div class="power-group"><span class="block block-green block-power2"></span><br>z²</div><div class="power-group"><span class="block block-green block-power3"></span><br>z³</div><div class="power-group"><span class="block block-green block-power4"></span><br>z⁴</div><div class="power-group"><span class="block block-green block-power5"></span><br>z⁵</div><div class="power-group"><span class="block block-green block-power6"></span><br>z⁶</div><div class="power-group"><span class="block block-green block-power7"></span><br>z⁷</div></div>
+                    </div>
+                </div>
+
+                <!-- PRACTICE TAB -->
+                <div id="practice-tab" class="tab-content">
+                    <div class="card">
+                        <h1 style="font-size: 2rem; text-align: center;">PRACTICE EXERCISES</h1>
+                        <div style="display:flex; align-items:center; gap:1rem; background:#f1f5f9; padding:1rem; border-radius:30px; margin:2rem 0;"><span style="font-size:3rem;">🧑‍🏫</span><span style="font-size:2rem;">Let's Try This!</span><p>Simplify the following algebraic expression</p></div>
+                        <div class="problem-box">
+                            <h2 id="problemNumber">Problem <span id="problemNum">1</span>/<span id="totalProblems">5</span></h2>
+                            <div id="problem"></div><div id="arrow">⬇</div><div id="coloredGiven"></div>
+                            <div style="margin-top: 1.5rem;"><p style="font-weight: bold; margin-bottom: 0.5rem;">✍️ WRITE YOUR ANSWER:</p><input type="text" id="practiceAnswerInput" class="answer-input" placeholder="e.g., 6x-3" style="width: 90%; margin: 0 auto;"><button class="btn btn-primary" onclick="checkPracticeAnswer()" style="margin-top: 1rem;">✅ CHECK ANSWER</button><div id="practiceFeedback" class="feedback" style="display: none;"></div></div>
+                        </div>
+                        <div style="display: flex; justify-content: center; gap: 1rem; margin: 2rem 0;"><button class="btn btn-primary" onclick="showProcess()">🔍 SHOW PROCESS</button></div>
+                        <div id="process" class="process-container" style="display: none;"></div>
+                        <div id="finalBox" class="final-answer-box" style="display: none;"><h3>✨ FINAL ANSWER ✨</h3><div id="finalAnswerDisplay"></div></div>
+                        <div style="display:flex; justify-content:center; gap:1rem;"><button class="btn btn-secondary" onclick="prevPractice()">◀ PREVIOUS</button><button class="btn btn-secondary" onclick="nextPractice()">NEXT ▶</button></div>
+                    </div>
+                </div>
+
+                <!-- DRAG & DROP TAB -->
+                <div id="dragdrop-tab" class="tab-content">
+                    <h1 style="background:#facc15;font-size: 3rem; text-align: center; margin-bottom: 0.5rem;">🖱️ DRAG AND DROP ME</h1>
+                    <p style="text-align:center; font-size: 1.2rem; margin-bottom: 2rem; color: #334155;">Drag the labeled blocks to build your expression!</p>
+                    <div class="problem-display" id="drag-problem">(5x - 4) - (11x + 9)</div>
+                    <div class="drag-drop-container">
+                        <div class="block-palette"><div class="palette-row" id="labeled-palette-row"></div></div>
+                        <div class="work-area">
+                            <div class="drop-columns">
+                                <div class="term-column"><div class="column-header x-header">X TERMS</div><div class="drop-zone" id="drop-x" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+                                <div class="term-column"><div class="column-header y-header">Y TERMS</div><div class="drop-zone" id="drop-y" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+                                <div class="term-column"><div class="column-header z-header">Z TERMS</div><div class="drop-zone" id="drop-z" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+                                <div class="term-column"><div class="column-header const-header">CONSTANTS</div><div class="drop-zone" id="drop-const" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+                            </div>
+                            <div class="answer-box"><h3>Your Final Answer:</h3><input type="text" class="answer-input" id="drag-answer" placeholder="e.g., -6x - 13"><button class="btn btn-primary" onclick="checkDragAnswer()">✅ CHECK ANSWER</button><button class="btn btn-secondary" onclick="undoLastDrop()">↩️ UNDO</button><button class="btn btn-secondary" onclick="clearColumns()">🗑️ CLEAR ALL</button><div class="feedback" id="drag-feedback"></div></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;"><button class="btn btn-secondary" onclick="prevDrag()">◀ PREVIOUS</button><button class="btn btn-secondary" onclick="nextDrag()">NEXT ▶</button></div>
+                </div>
+
+                <!-- WORD PROBLEMS TAB -->
+                <div id="wordproblems-tab" class="tab-content">
+                    <div class="card">
+                        <h1 style="font-size: 3rem; text-align: center;">📝 WORD PROBLEMS</h1>
+                        <div id="wp-problem" class="word-problem-text"></div>
+                        <div class="given-label">📌 GIVEN:</div><div id="wp-given" class="wp-given"></div>
+                        <div class="given-label">📝 Algebraic Expression:</div><div id="wp-expression" class="wp-expression"></div>
+                        <div class="given-label">🎨 Color-Coded Expression:</div><div id="wp-colored" class="wp-colored"></div>
+                        <div style="margin-top: 1.5rem;"><p style="font-weight: bold; margin-bottom: 0.5rem;">✍️ WRITE YOUR ANSWER:</p><input type="text" id="wpAnswerInput" class="answer-input" placeholder="e.g., 6x-3" style="width: 90%; margin: 0 auto;"><button class="btn btn-primary" onclick="checkWordAnswer()" style="margin-top: 1rem;">✅ CHECK ANSWER</button><div id="wpFeedback" class="feedback"></div></div>
+                        <div style="text-align:center; margin:2rem 0;"><button class="btn btn-primary" onclick="showWordProcess()">🔍 SHOW PROCESS</button></div>
+                        <div id="wp-process" class="process-container" style="display: none;"></div>
+                        <div id="wp-finalBox" class="final-answer-box" style="display: none;"><h3>✨ FINAL ANSWER ✨</h3><div id="wp-finalAnswer"></div></div>
+                        <div style="display:flex; justify-content:center; gap:1rem;"><button class="btn btn-secondary" onclick="prevWordProblem()">◀ PREVIOUS</button><button class="btn btn-secondary" onclick="nextWordProblem()">NEXT ▶</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POST-TEST (unchanged) -->
+        <div id="posttest" class="section">
+            <div class="card">
+                <h1 style="text-align:center;">📋 POST-TEST</h1>
+                <div class="quiz-header"><div class="timer" id="posttestTimer">30:00</div><button class="done-btn" onclick="submitPosttest()">SUBMIT ✅</button></div>
+                <div style="text-align:center; margin: 1rem 0;"><span style="font-size:1.2rem;">Question </span><span id="q-num" style="font-size:1.5rem; font-weight:bold;">1</span><span style="font-size:1.2rem;"> of 15</span></div>
+                <p style="font-size:1.2rem;margin-top:1.5rem;text-align:center;">Simplify the following expressions.</p>
+                <div id="posttest-question" style="background:#ffcc80; padding:2rem; border-radius:20px; font-size:1.8rem; text-align:center; margin:2rem 0; font-weight:bold;"></div>
+                <div style="margin-top: 1.5rem;"><p style="font-weight: bold; margin-bottom: 0.5rem;">✍️ WRITE YOUR ANSWER:</p><input type="text" id="posttestAnswerInput" class="answer-input" placeholder="e.g., 5x² + y + 11" style="width: 90%; margin: 0 auto;"><div id="posttestFeedback" class="feedback" style="display: none;"></div></div>
+                <div style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;"><button class="btn btn-secondary" onclick="prevPosttest()">◀ PREVIOUS</button><button class="btn btn-secondary" onclick="nextPosttest()">NEXT ▶</button></div>
+                <div id="posttest-score" style="text-align:center; margin-top:2rem; font-size:1.3rem; font-weight:bold;"></div>
+                <div id="posttest-answer-key" class="answer-key" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- GAMES SECTION (unchanged) -->
+        <div id="games" class="section">
+            <div class="card">
+                <h1 style="font-size: 3rem; text-align: center;">🎮 ALGEBLOCKS RUSH</h1>
+                <p style="text-align:center; font-style:italic;">"Solve Fast. Think Smart."</p>
+                <div style="background:#facc15; padding:1rem; border-radius:20px; margin:1rem 0;"><p><strong>INSTRUCTIONS:</strong></p><ol style="margin-left:2rem;"><li>Drag and drop the blocks into the correct columns to simplify the expression.</li><li>Type your simplified answer in the box .</li><li>Only correct answers let you proceed to the next problem.</li><li>You have <strong>20 minutes</strong> to finish all 5 problems.</li><li>The fastest time is the winner!</li></ol></div>
+                <div style="text-align:center; margin:1rem 0;"><div class="game-timer" id="gameTimerDisplay">20:00</div></div>
+                <div style="background:#ffcc80; padding:1rem; border-radius:15px; text-align:center; margin:1rem 0;"><p><strong>Problem <span id="gameProblemNum">1</span> of <span id="gameTotalProblems">5</span></strong></p><p style="font-size:1.5rem; font-weight:bold;" id="gameQuestionText"></p></div>
+                <div class="drag-drop-container">
+                    <div class="block-palette"><div class="palette-row"><div class="palette-section"><div class="palette-title">X TERMS</div><div class="blocks-row" id="game-palette-x"></div></div><div class="palette-section"><div class="palette-title">Y TERMS</div><div class="blocks-row" id="game-palette-y"></div></div><div class="palette-section"><div class="palette-title">Z TERMS</div><div class="blocks-row" id="game-palette-z"></div></div><div class="palette-section"><div class="palette-title">CONSTANTS</div><div class="blocks-row" id="game-palette-c"></div></div></div></div>
+                    <div class="work-area">
+                        <div class="drop-columns"><div class="term-column"><div class="column-header x-header">X TERMS</div><div class="drop-zone" id="game-drop-x" ondrop="gameDrop(event)" ondragover="allowDrop(event)"></div></div><div class="term-column"><div class="column-header y-header">Y TERMS</div><div class="drop-zone" id="game-drop-y" ondrop="gameDrop(event)" ondragover="allowDrop(event)"></div></div><div class="term-column"><div class="column-header z-header">Z TERMS</div><div class="drop-zone" id="game-drop-z" ondrop="gameDrop(event)" ondragover="allowDrop(event)"></div></div><div class="term-column"><div class="column-header const-header">CONSTANTS</div><div class="drop-zone" id="game-drop-const" ondrop="gameDrop(event)" ondragover="allowDrop(event)"></div></div></div>
+                        <div class="answer-box"><h3>Your Final Answer:</h3><input type="text" class="answer-input" id="gameAnswerInput" placeholder="e.g., -6x - 13"><div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;"><button class="btn btn-primary" onclick="checkGameAnswer()">✅ CHECK ANSWER</button><button class="btn btn-secondary" onclick="undoGameDrop()">↩️ UNDO</button><button class="btn btn-secondary" onclick="clearGameColumns()">🗑️ CLEAR ALL</button><button id="gameNextBtn" class="btn btn-success" onclick="nextGameProblem()" style="display: none;">▶ NEXT PROBLEM</button></div><div id="gameFeedback" class="feedback"></div></div>
+                    </div>
+                </div>
+                <div id="gameComplete" style="display:none; text-align:center; margin-top:2rem; padding:2rem; background:#86efac; border-radius:20px;"><h2>🎉 CONGRATULATIONS! 🎉</h2><p>You completed ALGEBLOCKS RUSH!</p><p>Your time: <span id="finalGameTime"></span></p><button class="btn btn-primary" onclick="resetGame()">PLAY AGAIN</button></div>
+            </div>
+        </div>
+
+        <!-- CLOSING PAGE -->
+        <div id="closing" class="section">
+            <div class="card">
+                <h1 style="font-size: 3rem; text-align: center; margin-bottom: 2rem;">✨ THANK YOU ✨</h1>
+                <h2 style="text-align:center;">for using ALGEBLOCKS!</h2>
+                <div style="margin: 2rem 0;"><h1 style="font-size: 2rem; text-align: center; margin-bottom: 2rem;">ABOUT THE AUTHORS</h1><div style="display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center;"><div style="flex:1; min-width:280px; text-align:center;"><img src="https://i.imgur.com/meizmiP.jpeg" alt="Clarisse Y. Obzunar" style="width:150px; height:150px; border-radius:50%; object-fit:cover; margin:0 auto 1.5rem; display:block; border:3px solid var(--x-blue);"><h2>Clarisse Y. Obzunar</h2><p style="margin:1rem 0; font-size:1.1rem;">3rd Year College<br>BS Education Major in Mathematics</p><p>Biliran Province State University</p><p style="margin-top:1rem; color:var(--x-blue); font-weight:600;">obzunarclarisse24@gmail.com</p></div><div style="flex:1; min-width:280px; text-align:center;"><img src="https://i.imgur.com/rRGy1pW.jpeg" alt="Cena Ruth Cardona" style="width:150px; height:150px; border-radius:50%; object-fit:cover; margin:0 auto 1.5rem; display:block; border:3px solid var(--y-orange);"><h2>Cena Ruth Cardona</h2><p style="margin:1rem 0; font-size:1.1rem;">3rd Year College<br>BS Education Major in Mathematics</p><p>Biliran Province State University</p><p style="margin-top:1rem; color:var(--y-orange); font-weight:600;">cenaruthc@gmail.com</p></div></div></div>
+                <div class="key-points"><h2>📚 Key Points & Activities</h2><div class="key-grid"><div class="key-card"><h3>🔵 Key Concepts</h3><p>✓ Combine like terms: same variable AND exponent.<br>✓ Different exponent = different block size.<br>✓ Solid block = positive term; outlined = negative.<br>✓ Adding: keep sign; Subtracting: change sign of subtrahend.</p></div><div class="key-card"><h3>📖 Reference</h3><p><strong>OpenStax:</strong> “6.1 Add and Subtract Polynomials.” <em>Elementary Algebra</em>.<br><a href="https://openstax.org/books/elementary-algebra/pages/6-1-add-and-subtract-polynomials" target="_blank" style="color: #3b82f6;">https://openstax.org/books/elementary-algebra/pages/6-1-add-and-subtract-polynomials</a></p></div></div></div>
+                <div class="contact-info"><p>📧 <strong>Have questions?</strong> Contact the researchers:</p><p><strong>Clarisse Y. Obzunar</strong><br>📧 <a href="mailto:obzunarclarisse24@gmail.com">obzunarclarisse24@gmail.com</a></p><p><strong>Cena Ruth Cardona</strong><br>📧 <a href="mailto:cenaruthc@gmail.com">cenaruthc@gmail.com</a></p><div style="font-size:1.2rem;font-style:italic;margin-top:1rem;">"Mathematics is not about numbers, equations, computations, or algorithms: it is about understanding." — William Paul Thurston</div></div>
+                <button class="btn btn-primary" onclick="showSection('home')">🏠 BACK TO HOME</button>
+            </div>
+        </div>
+    </div>
+    <footer>© 2026 Algeblocks - Simplify Algebra with Blocks Representation Approach</footer>
+
+    <script>
+        // ==================== JAVASCRIPT - FULLY FUNCTIONAL (FIXED TAB SWITCHING) ====================
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // Fixed lesson tab switching: uses data-tab attribute
+        function switchLessonTab(tabName) {
+            // Remove active classes from all tab buttons and tab contents
+            document.querySelectorAll('#lesson .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('#lesson .tab-content').forEach(content => content.classList.remove('active'));
+            // Activate the clicked button (find by data-tab)
+            const activeBtn = document.querySelector(`#lesson .tab-btn[data-tab="${tabName}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+            // Show the corresponding tab content
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // Add click handlers to lesson tab buttons (using data-tab)
+        document.querySelectorAll('#lesson .tab-btn').forEach(btn => {
+            const tabName = btn.getAttribute('data-tab');
+            if (tabName) {
+                btn.onclick = () => switchLessonTab(tabName);
+            }
+        });
+
+        function showTopicSection(section) {
+            document.querySelectorAll('.topic-section').forEach(s => s.style.display = 'none');
+            document.getElementById(`${section}-section`).style.display = 'block';
+        }
+
+        let lessonUndoStack = [];
+        function allowDrop(e) { e.preventDefault(); }
+        function drag(e) { e.dataTransfer.setData("text/plain", e.target.id); }
+        function drop(e) { 
+            e.preventDefault(); 
+            let id = e.dataTransfer.getData("text/plain"); 
+            let originalBlock = document.getElementById(id);
+            if(!originalBlock) return;
+            let clone = originalBlock.cloneNode(true); 
+            clone.draggable = false; 
+            let newId = id + "_cloned_" + Date.now() + "_" + Math.random();
+            clone.id = newId; 
+            e.target.appendChild(clone);
+            lessonUndoStack.push({ cloneId: newId, parentId: e.target.id });
+        }
+        function undoLastDrop() {
+            if(lessonUndoStack.length === 0) {
+                let fb = document.getElementById('drag-feedback');
+                fb.innerHTML = "⚠️ Nothing to undo.";
+                fb.className = "feedback incorrect";
+                fb.style.display = "block";
+                setTimeout(() => fb.style.display = "none", 1500);
+                return;
+            }
+            let last = lessonUndoStack.pop();
+            let elem = document.getElementById(last.cloneId);
+            if(elem) elem.remove();
+        }
+        function clearColumns() {
+            document.querySelectorAll('#dragdrop-tab .drop-zone').forEach(zone => zone.innerHTML = '');
+            lessonUndoStack = [];
+            document.getElementById('drag-answer').value = '';
+            document.getElementById('drag-feedback').style.display = 'none';
+        }
+
+        let gameUndoStack = [];
+        function gameDrop(e) { 
+            e.preventDefault(); 
+            let id = e.dataTransfer.getData("text/plain"); 
+            let clone = document.getElementById(id).cloneNode(true); 
+            clone.draggable = false; 
+            let cloneId = id + "_cloned_" + Date.now() + "_" + Math.random();
+            clone.id = cloneId; 
+            e.target.appendChild(clone);
+            gameUndoStack.push({ cloneId: cloneId });
+        }
+        function undoGameDrop() {
+            if(gameUndoStack.length === 0) return;
+            let last = gameUndoStack.pop();
+            let cloneElem = document.getElementById(last.cloneId);
+            if(cloneElem) cloneElem.remove();
+        }
+        function clearGameColumns() {
+            document.querySelectorAll('#games .drop-zone').forEach(zone => zone.innerHTML = '');
+            gameUndoStack = [];
+            document.getElementById('gameAnswerInput').value = '';
+            document.getElementById('gameFeedback').style.display = 'none';
+        }
+
+        function formatExponent(term) { return term.replace(/\^2/g, '²').replace(/\^3/g, '³').replace(/\^4/g, '⁴').replace(/\^5/g, '⁵').replace(/\^6/g, '⁶').replace(/\^7/g, '⁷'); }
+        function getCoefficient(term, variable) { let match = term.match(new RegExp(`([+-]?\\d*)(?:${variable})(?:²|³|⁴|⁵|⁶|⁷)?`)); if (!match) return 0; let coeff = match[1]; if (coeff === '' || coeff === '+') return 1; if (coeff === '-') return -1; return parseInt(coeff) || 0; }
+        function getPower(term, variable) { if (term.includes('⁷')) return 7; if (term.includes('⁶')) return 6; if (term.includes('⁵')) return 5; if (term.includes('⁴')) return 4; if (term.includes('³')) return 3; if (term.includes('²')) return 2; if (term.includes('^')) { let parts = term.split('^'); return parseInt(parts[1]) || 1; } return 1; }
+        function getExponentSymbol(power) { if (power === 1) return ''; if (power === 2) return '²'; if (power === 3) return '³'; if (power === 4) return '⁴'; if (power === 5) return '⁵'; if (power === 6) return '⁶'; if (power === 7) return '⁷'; return ''; }
+        function buildBlocks(coefficient, power, color, addCancelClass = false) { let blocks = ''; let absCoeff = Math.abs(coefficient); let blockClass = `block block-${color}`; let powerClass = `block-power${Math.min(power, 7)}`; if (color === 'brown') blockClass += ' block-power1'; else blockClass += ` ${powerClass}`; if (coefficient < 0) blockClass += ' block-outline'; let extraClass = addCancelClass ? ' cancelled-block' : ''; for (let i = 0; i < absCoeff; i++) blocks += `<span class="${blockClass}${extraClass}" style="margin: 2px;"></span>`; return blocks; }
+        function colorGiven(expr) { let result = ''; let currentTerm = ''; for (let i = 0; i < expr.length; i++) { let char = expr[i]; if (char === '+' || char === '-' || char === '(' || char === ')' || char === ' ') { if (currentTerm) { let col = 'black'; if (currentTerm.includes('x')) col = '#3b82f6'; else if (currentTerm.includes('y')) col = '#f97316'; else if (currentTerm.includes('z')) col = '#22c55e'; else if (!currentTerm.match(/[xyz]/)) col = '#8B4513'; result += `<span style="color:${col}; font-weight:bold; padding:6px 12px; border-radius:10px; background:#f0f0f0; margin:0 5px; display:inline-block;">${formatExponent(currentTerm)}</span>`; currentTerm = ''; } if (char !== ' ') result += `<span style="color:black; font-weight:bold; margin:0 3px;">${char}</span>`; else result += ' '; } else { currentTerm += char; } } if (currentTerm) { let col = 'black'; if (currentTerm.includes('x')) col = '#3b82f6'; else if (currentTerm.includes('y')) col = '#f97316'; else if (currentTerm.includes('z')) col = '#22c55e'; else col = '#8B4513'; result += `<span style="color:${col}; font-weight:bold; padding:6px 12px; border-radius:10px; background:#f0f0f0; margin:0 5px; display:inline-block;">${formatExponent(currentTerm)}</span>`; } return `<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 5px;">${result}</div>`; }
+        function distributeNegative(expr) { let result = expr; result = result.replace(/-\(([^)]+)\)/g, (match, inside) => { let terms = inside.split(/(?=[+-])/); let distributed = terms.map(term => { if (term.startsWith('+')) return '-' + term.substring(1); if (term.startsWith('-')) return '+' + term.substring(1); return '-' + term; }).join(''); return distributed; }); result = result.replace(/-\(/g, '+(-'); return result; }
+        function parseExpression(expr) { let processedExpr = distributeNegative(expr); processedExpr = processedExpr.replace(/²/g, '^2').replace(/³/g, '^3').replace(/⁴/g, '^4').replace(/⁵/g, '^5').replace(/⁶/g, '^6').replace(/⁷/g, '^7'); let cleanExpr = processedExpr.replace(/\s+/g, ''); let terms = [], termStr = ''; for (let i = 0; i < cleanExpr.length; i++) { if ((cleanExpr[i] === '+' || cleanExpr[i] === '-') && i > 0) { if (termStr) terms.push(termStr); termStr = cleanExpr[i]; } else { termStr += cleanExpr[i]; } } if (termStr) terms.push(termStr); return terms.map(t => t.replace(/[()]/g, '')).filter(t => t); }
+        function simplifyExpression(expr) { let terms = parseExpression(expr); let sums = {}; terms.forEach(term => { if (term.includes('x')) { let power = getPower(term, 'x'); let coeff = getCoefficient(term, 'x'); sums[`x${power}`] = (sums[`x${power}`] || 0) + coeff; } else if (term.includes('y')) { let power = getPower(term, 'y'); let coeff = getCoefficient(term, 'y'); sums[`y${power}`] = (sums[`y${power}`] || 0) + coeff; } else if (term.includes('z')) { let power = getPower(term, 'z'); let coeff = getCoefficient(term, 'z'); sums[`z${power}`] = (sums[`z${power}`] || 0) + coeff; } else { sums['const'] = (sums['const'] || 0) + (parseInt(term) || 0); } }); let sortedKeys = Object.keys(sums).sort((a, b) => { let powerA = parseInt(a.match(/\d+/) || [0]); let powerB = parseInt(b.match(/\d+/) || [0]); if (a === 'const') return 1; if (b === 'const') return -1; return powerB - powerA; }); let result = []; sortedKeys.forEach(key => { let coeff = sums[key]; if (coeff === 0) return; let termStr = ''; if (key === 'const') termStr = coeff.toString(); else { let varLetter = key[0]; let power = parseInt(key.match(/\d+/)[0]); let expSym = getExponentSymbol(power); if (coeff === 1) termStr = `${varLetter}${expSym}`; else if (coeff === -1) termStr = `-${varLetter}${expSym}`; else termStr = `${coeff}${varLetter}${expSym}`; } if (result.length > 0 && termStr.charAt(0) !== '-') termStr = '+ ' + termStr; result.push(termStr); }); if (result.length === 0) return '0'; let final = result.join(' '); if (final.startsWith('+ ')) final = final.substring(2); return final; }
+
+        function showGenericProcess(expr, targetProcessId, targetFinalId) {
+            let terms = parseExpression(expr);
+            let groups = {};
+            terms.forEach(term => { if (term.includes('x')) { let power = getPower(term,'x'); let key=`x${power}`; if(!groups[key]) groups[key]={var:'x',power,color:'blue',terms:[],coeffs:[]}; groups[key].terms.push(term); groups[key].coeffs.push(getCoefficient(term,'x')); } else if (term.includes('y')) { let power = getPower(term,'y'); let key=`y${power}`; if(!groups[key]) groups[key]={var:'y',power,color:'orange',terms:[],coeffs:[]}; groups[key].terms.push(term); groups[key].coeffs.push(getCoefficient(term,'y')); } else if (term.includes('z')) { let power = getPower(term,'z'); let key=`z${power}`; if(!groups[key]) groups[key]={var:'z',power,color:'green',terms:[],coeffs:[]}; groups[key].terms.push(term); groups[key].coeffs.push(getCoefficient(term,'z')); } else { if(!groups['const']) groups['const']={var:'',power:0,color:'brown',terms:[],coeffs:[]}; groups['const'].terms.push(term); groups['const'].coeffs.push(parseInt(term)||0); } });
+            let html = '<div class="process-grid">';
+            for (let key in groups) { let g = groups[key]; let cardClass = g.var==='x'?'card-x':g.var==='y'?'card-y':g.var==='z'?'card-z':'card-const'; let emoji = g.var==='x'?'🔵':g.var==='y'?'🟠':g.var==='z'?'🟢':'🟤'; let displayName = g.var? `${g.var}${getExponentSymbol(g.power)}` : 'Constant'; html += `<div class="term-card ${cardClass}"><div class="card-title">${emoji} ${displayName} TERMS${g.power>0?`<span class="power-indicator">Power ${g.power}</span>`:''}</div>`; let sum = 0; for(let idx=0; idx<g.terms.length; idx++) { let coeff = g.coeffs[idx]; sum += coeff; html += `<div class="term-item"><span class="term-text">${formatExponent(g.terms[idx])}</span><div class="blocks-container">${buildBlocks(coeff, g.power, g.color, false)}</div></div>`; } let posCount=0, negCount=0; g.coeffs.forEach(c=>{if(c>0) posCount+=c; else if(c<0) negCount+=-c;}); let hasBoth = (posCount>0 && negCount>0); let eliminationHtml = ''; if (!hasBoth) { let isPositive = posCount > 0; let displayCoeff = isPositive ? posCount : -negCount; let blocksHtml = buildBlocks(displayCoeff, g.power, g.color, false); eliminationHtml = `<div class="elimination-row"><span class="elim-label">🧹 Combine the similar blocks:</span><div style="display:flex; flex-wrap:wrap; gap:15px; align-items:center;"><div class="elim-blocks">${blocksHtml}</div></div></div>`; } else { let cancelPairs = Math.min(posCount, negCount); let posBlocks='', negBlocks=''; for(let i=0;i<posCount;i++) posBlocks += buildBlocks(1, g.power, g.color, i<cancelPairs); for(let i=0;i<negCount;i++) negBlocks += buildBlocks(-1, g.power, g.color, i<cancelPairs); eliminationHtml = `<div class="elimination-row"><span class="elim-label">🧹 Cancel opposite blocks:</span><div style="display:flex; flex-wrap:wrap; gap:15px; align-items:center;"><div class="elim-blocks">${posBlocks}</div><span class="vs-icon">⇢</span><div class="elim-blocks">${negBlocks}</div>${cancelPairs>0?`<div style="background:#fecaca; padding:5px 12px; border-radius:40px;">✔️ ${cancelPairs} pair(s) cancelled</div>`:''}</div></div>`; } html += eliminationHtml; let remaining = sum; let resultTerm = ''; if (g.var) { let expSym = getExponentSymbol(g.power); if(remaining===1) resultTerm=`+${g.var}${expSym}`; else if(remaining===-1) resultTerm=`-${g.var}${expSym}`; else if(remaining!==0) resultTerm=`${remaining>0?'+':''}${remaining}${g.var}${expSym}`; } else { resultTerm = `${remaining>0?'+':''}${remaining}`; } let finalLabel = hasBoth ? "📦 REMAINING BLOCKS:" : "📦 COMBINED:"; html += `<div class="combine-section"><span class="combine-label">${finalLabel}</span><div class="blocks-container">${buildBlocks(remaining, g.power, g.color)}</div><span class="combine-result">${resultTerm}</span></div></div>`; }
+            html += '</div>';
+            document.getElementById(targetProcessId).innerHTML = html;
+            document.getElementById(targetProcessId).style.display = 'block';
+            let finalAnswer = simplifyExpression(expr);
+            document.getElementById(targetFinalId).innerHTML = finalAnswer;
+            document.getElementById(targetFinalId === 'finalAnswerDisplay' ? 'finalBox' : 'wp-finalBox').style.display = 'block';
+        }
+
+        function showProcess() { showGenericProcess(practiceProblems[currentProblem].expr, 'process', 'finalAnswerDisplay'); }
+        function showWordProcess() { showGenericProcess(wordProblems[wpIndex].expr, 'wp-process', 'wp-finalAnswer'); }
+
+        const practiceProblems = [ { expr: "(2x-4)+(4x+1)", answer: "6x-3" }, { expr: "(5y+2z+1)-(5y+9z+6)", answer: "-7z-5" }, { expr: "4x-10x-14", answer: "-6x-14" }, { expr: "(x³+3x+2y+9)+(6x³+3x-5y-15)", answer: "7x³+6x-3y-6" }, { expr: "(4x²+10x-6z)-(10x²+4)+(-2+12x)+(y³+9x²+10x-17)", answer: "y³+3x²+32x-6z-23" } ];
+        let currentProblem = 0;
+        function updatePractice() { document.getElementById('problemNum').innerHTML = currentProblem+1; document.getElementById('totalProblems').innerHTML = practiceProblems.length; document.getElementById('problem').innerHTML = practiceProblems[currentProblem].expr; document.getElementById('coloredGiven').innerHTML = colorGiven(practiceProblems[currentProblem].expr); document.getElementById('process').style.display = 'none'; document.getElementById('finalBox').style.display = 'none'; document.getElementById('practiceFeedback').style.display = 'none'; document.getElementById('practiceAnswerInput').value = ''; }
+        function nextPractice() { currentProblem = (currentProblem+1)%practiceProblems.length; updatePractice(); }
+        function prevPractice() { currentProblem = (currentProblem-1+practiceProblems.length)%practiceProblems.length; updatePractice(); }
+        function checkPracticeAnswer() { let user = document.getElementById('practiceAnswerInput').value.trim().toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let correct = practiceProblems[currentProblem].answer.toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let fb = document.getElementById('practiceFeedback'); if(user===correct){ fb.className='feedback correct'; fb.innerHTML='✅ CORRECT!'; fb.style.display='block'; } else { fb.className='feedback incorrect'; fb.innerHTML=`❌ Incorrect. Correct: ${practiceProblems[currentProblem].answer}`; fb.style.display='block'; } }
+        updatePractice();
+
+        const dragProblemsList = [ { problem: "(5x - 4) - (11x + 9)", answer: "-6x-13" }, { problem: "(y⁴ - 5x² + z) + (7y⁴ - 2x² + 6z + 13)", answer: "8y⁴-7x²+7z+13" }, { problem: "(5x² + 10y + 14z - 4) - (11y - 3x² - 9)", answer: "8x²-y+14z+5" }, { problem: "(8y - 2z + 1) + (8x+ 7y - 2z-1)", answer: "8x+15y-4z" } ];
+        let dragIdx = 0;
+        function buildLabeledPalette() { const container = document.getElementById('labeled-palette-row'); if (!container) return; container.innerHTML = ''; function sup(p) { if (p === 1) return ''; if (p === 2) return '²'; if (p === 3) return '³'; if (p === 4) return '⁴'; return '^' + p; } const categories = [ { name: 'X TERMS', letter: 'x', color: 'blue', powers: [1,2,3,4] }, { name: 'Y TERMS', letter: 'y', color: 'orange', powers: [1,2,3,4] }, { name: 'Z TERMS', letter: 'z', color: 'green', powers: [1,2,3,4] }, { name: 'CONSTANTS', letter: '', color: 'brown', powers: [1] } ]; categories.forEach(cat => { let section = document.createElement('div'); section.className = 'palette-section'; section.innerHTML = `<div class="palette-title">${cat.name}</div><div class="blocks-row" id="pal-row-${cat.name}"></div>`; let blocksRow = section.querySelector('.blocks-row'); if (cat.letter) { cat.powers.forEach(p => { const expSym = sup(p); let posWrap = document.createElement('div'); posWrap.className = 'block-wrapper'; let posBlock = document.createElement('span'); posBlock.className = `block block-${cat.color} block-power${p}`; posBlock.draggable = true; posBlock.ondragstart = drag; posBlock.id = `drag_${cat.letter}_pos_p${p}`; posWrap.appendChild(posBlock); let posLabel = document.createElement('div'); posLabel.className = 'block-label'; posLabel.innerText = `${cat.letter}${expSym}`; posWrap.appendChild(posLabel); let negWrap = document.createElement('div'); negWrap.className = 'block-wrapper'; let negBlock = document.createElement('span'); negBlock.className = `block block-${cat.color} block-outline block-power${p}`; negBlock.draggable = true; negBlock.ondragstart = drag; negBlock.id = `drag_${cat.letter}_neg_p${p}`; negWrap.appendChild(negBlock); let negLabel = document.createElement('div'); negLabel.className = 'block-label'; negLabel.innerText = `-${cat.letter}${expSym}`; negWrap.appendChild(negLabel); blocksRow.append(posWrap, negWrap); }); } else { let posWrap = document.createElement('div'); posWrap.className = 'block-wrapper'; let posBlock = document.createElement('span'); posBlock.className = 'block block-brown block-power1'; posBlock.draggable = true; posBlock.ondragstart = drag; posBlock.id = 'drag_const_pos'; posWrap.appendChild(posBlock); let negWrap = document.createElement('div'); negWrap.className = 'block-wrapper'; let negBlock = document.createElement('span'); negBlock.className = 'block block-brown block-outline block-power1'; negBlock.draggable = true; negBlock.ondragstart = drag; negBlock.id = 'drag_const_neg'; negWrap.appendChild(negBlock); blocksRow.append(posWrap, negWrap); } container.appendChild(section); }); }
+        function updateDrag() { document.getElementById('drag-problem').innerHTML = dragProblemsList[dragIdx].problem; clearColumns(); }
+        function nextDrag() { dragIdx = (dragIdx+1)%dragProblemsList.length; updateDrag(); }
+        function prevDrag() { dragIdx = (dragIdx-1+dragProblemsList.length)%dragProblemsList.length; updateDrag(); }
+        function checkDragAnswer() { let user = document.getElementById('drag-answer').value.trim().toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let correct = dragProblemsList[dragIdx].answer.toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let fb = document.getElementById('drag-feedback'); if(user===correct){ fb.className='feedback correct'; fb.innerHTML='✅ CORRECT!'; fb.style.display='block'; } else { fb.className='feedback incorrect'; fb.innerHTML='❌ Try again!'; fb.style.display='block'; } }
+        buildLabeledPalette(); updateDrag();
+
+        const wordProblems = [ { problem: "1. Harold save (2x+3y) pesos from his allowance on Monday and (6x-y) pesos on Tuesday. What is the total savings for 2 days?", expr: "(2x+3y)+(6x-y)", given: "Monday: (2x+3y)<br>Tuesday: (6x-y)" }, { problem: "2. A factory produced (5x⁴ + 3y³ + 2z + 8) units in the first week and (4x⁴ + 2y³ + 3z + 5) units in the second week. What is the total production?", expr: "(5x⁴+3y³+2z+8)+(4x⁴+2y³+3z+5)", given: "First Week: (5x⁴+3y³+2z+8)<br>Second Week: (4x⁴+2y³+3z+5)" }, { problem: "3. A gardener planted (7x³ + 5y² + z + 10) flowers in the front garden and removed (3x³ + 2y² + z + 4) flowers that were damaged. How many flowers remain?", expr: "(7x³+5y²+z+10)-(3x³+2y²+z+4)", given: "Planted: (7x³+5y²+z+10)<br>Removed: (3x³+2y²+z+4)" }, { problem: "4. A student scored (8x⁵ + 4y³ + 2z + 12) points in a math competition and scored (5x⁵ + 3y³ + z + 7) points in a science competition. What is the total score?", expr: "(8x⁵+4y³+2z+12)+(5x⁵+3y³+z+7)", given: "Math: (8x⁵+4y³+2z+12)<br>Science: (5x⁵+3y³+z+7)" } ];
+        let wpIndex = 0;
+        function updateWordProblem() { let wp = wordProblems[wpIndex]; document.getElementById('wp-problem').innerHTML = wp.problem; document.getElementById('wp-given').innerHTML = wp.given; document.getElementById('wp-expression').innerHTML = formatExponent(wp.expr); document.getElementById('wp-colored').innerHTML = colorGiven(wp.expr); document.getElementById('wp-process').style.display = 'none'; document.getElementById('wp-finalBox').style.display = 'none'; document.getElementById('wpAnswerInput').value = ''; document.getElementById('wpFeedback').style.display = 'none'; }
+        function checkWordAnswer() { let user = document.getElementById('wpAnswerInput').value.trim().toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let correct = simplifyExpression(wordProblems[wpIndex].expr).toLowerCase().replace(/\s/g,''); let fb = document.getElementById('wpFeedback'); if(user===correct){ fb.className='feedback correct'; fb.innerHTML='✅ CORRECT!'; fb.style.display='block'; } else { fb.className='feedback incorrect'; fb.innerHTML=`❌ Incorrect. Correct: ${simplifyExpression(wordProblems[wpIndex].expr)}`; fb.style.display='block'; } }
+        function nextWordProblem() { wpIndex = (wpIndex+1)%wordProblems.length; updateWordProblem(); }
+        function prevWordProblem() { wpIndex = (wpIndex-1+wordProblems.length)%wordProblems.length; updateWordProblem(); }
+        updateWordProblem();
+
+        const pretestQuestions = [ "4x-10x-14", "(2x-4)+(4x+1)", "(8x+2)+(-3x+14)", "(5y+2z+1)-(5y+9z+6)", "(14x-12y)+ (-5y-12x+8)", "(7y+4-13z+4)+ (-2y+4z-2)", "(z³-3z+7) - (5z³-9)", "(5x³-2x-1) - (3x³-5x+7)", "(11z²-10x-5z+1)+ (-5x-5-15z²)", "(6y³-4x²+x-9) + (3x²+7x+3)", "(5x³-2x-1) - (3x²-5x+7)", "(4x⁴+y²+z³+2)+(2x⁴+3z³+8)", "(9y²-2z-11)+(5z+9y+3z²+2)", "(7x³+5y+z+10)-(2x³+y+6)", "(x³+2x²+4z²+3)+(3x³-x²+z²+5)" ];
+        const pretestAnswers = [ "-6x-14", "6x-3", "5x+16", "-7z-5", "2x-17y+8", "5y-9z+6", "-4z³-3z+16", "2x³+3x-8", "-4z²-15x-5z-4", "6y³-x²+8x-6", "5x³-3x²+3x-8", "6x⁴+4z³+y²+10", "9y²+3z²+9y+3z-9", "5x³+4y+z+4", "4x³+x²+5z²+8" ];
+        let pretestUserAnswers = new Array(15).fill(''); let pretestCurrentIdx = 0, pretestSubmitted = false, pretestSeconds = 25*60, pretestTimerInterval = null, pretestTimerStarted = false;
+        function startPretestTimer() { if(!pretestTimerStarted && !pretestSubmitted){ pretestTimerStarted=true; pretestTimerInterval=setInterval(()=>{ if(pretestSubmitted) return; if(pretestSeconds<=0){ clearInterval(pretestTimerInterval); submitPretest(); } else { pretestSeconds--; let m=Math.floor(pretestSeconds/60), s=pretestSeconds%60; document.getElementById('pretestTimer').innerHTML=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; } },1000); } }
+        document.getElementById('pretest-answer').addEventListener('input', startPretestTimer);
+        function loadPretestQuestion() { document.getElementById('pretestProblemNum').innerHTML=pretestCurrentIdx+1; document.getElementById('pretest-question-text').innerHTML=pretestQuestions[pretestCurrentIdx]; document.getElementById('pretest-answer').value=pretestUserAnswers[pretestCurrentIdx]||''; }
+        function nextPretestQuestion() { if(pretestSubmitted) return; pretestUserAnswers[pretestCurrentIdx]=document.getElementById('pretest-answer').value; if(pretestCurrentIdx<14){ pretestCurrentIdx++; loadPretestQuestion(); } else alert("Last question. Click DONE to submit."); }
+        function prevPretestQuestion() { if(pretestSubmitted) return; pretestUserAnswers[pretestCurrentIdx]=document.getElementById('pretest-answer').value; if(pretestCurrentIdx>0){ pretestCurrentIdx--; loadPretestQuestion(); } else alert("First question."); }
+        function submitPretest() { if(pretestSubmitted) return; if(pretestTimerInterval) clearInterval(pretestTimerInterval); pretestUserAnswers[pretestCurrentIdx]=document.getElementById('pretest-answer').value; let score=0; for(let i=0;i<15;i++){ let user=(pretestUserAnswers[i]||'').toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let correct=pretestAnswers[i].toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); if(user===correct) score++; } pretestSubmitted=true; document.getElementById('pretest-score-display').innerHTML=`🎯 Your Score: ${score} / 15`; let answerKeyHtml = '<h3>📋 ANSWER KEY</h3><ol>'; for(let i=0;i<15;i++){ answerKeyHtml += `<li>${pretestQuestions[i]} = ${pretestAnswers[i]}</li>`; } answerKeyHtml += '</ol>'; document.getElementById('pretest-answer-key').innerHTML = answerKeyHtml; document.getElementById('pretest-answer-key').style.display = 'block'; alert(`Pre-test completed!\nScore: ${score}/15\nCheck the answer key below.`); }
+        loadPretestQuestion();
+
+        const postExpr = [ "(3x²+y+7)+(2x²+4)", "(4y²+3z)-(y²+z+10)", "(5x³+2y+6)+(x³+3y+2)", "(8x+3z+9)-(4x+z+5)", "(2x²+7y+z+1)+(3x²+y+4)", "(9y³+2x+6)-(3y³+x+2)", "(4x+5y+2z+3)+(x+2z+7)", "(7x²+3y+8)-(2x²+y+4)", "(2x⁵+3x²+y+6)+(4x⁵-x²+2y+3)", "(5y⁴+2x³+z+7)-(2y⁴+x³+z+4)", "Vincent saved (2x⁵ + 3y² + 6) pesos on Monday , (6x⁵ − y² + 4) pesos on Tuesday and (3y²-10) on Wednesday. Find his total savings.", "A store sold (3x³ + 2y² + 7) items in the morning and (5x³ − y² + 9) in the afternoon. Find the total number of items sold.", "Maria earned (5x⁴ + 4y³ + 10) pesos and spent (2x⁴ + y³ + 6) pesos. How much money does she have left?", "A fisherman sell his fish (6x⁴ + 3y² + 12) kilos and then (4x⁴ − y² + 5) kilos.Many kilos did he sold?", "A student answered (8x³ + 5y² + 15) questions but got (3x³ + 2y² + 6) wrong. How many correct answers did the student get?" ];
+        const postAns = [ "5x²+y+11", "3y²+2z-10", "6x³+5y+8", "4x+2z+4", "5x²+8y+z+5", "6y³+x+4", "5x+5y+4z+10", "5x²+2y+4", "6x⁵+2x²+3y+9", "3y⁴+x³+3", "8x⁵+5y²", "8x³+y²+16", "3x⁴+3y³+4", "10x⁴+2y²+17", "5x³+3y²+9" ];
+        let postUserAnswers = new Array(15).fill(''); let postCurrentIndex=0, postTestSubmitted=false, postSeconds=30*60, postTimerInterval=null, postTimerStarted=false;
+        function startPostTimer() { if(!postTimerStarted && !postTestSubmitted){ postTimerStarted=true; postTimerInterval=setInterval(()=>{ if(postTestSubmitted) return; if(postSeconds<=0){ clearInterval(postTimerInterval); submitPosttest(); } else { postSeconds--; let m=Math.floor(postSeconds/60), s=postSeconds%60; document.getElementById('posttestTimer').innerHTML=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; } },1000); } }
+        document.getElementById('posttestAnswerInput').addEventListener('input', startPostTimer);
+        function updatePosttest() { document.getElementById('q-num').innerHTML=postCurrentIndex+1; document.getElementById('posttest-question').innerHTML=postExpr[postCurrentIndex]; document.getElementById('posttestAnswerInput').value=postUserAnswers[postCurrentIndex]||''; document.getElementById('posttestFeedback').style.display='none'; }
+        function nextPosttest() { if(postTestSubmitted) return; postUserAnswers[postCurrentIndex]=document.getElementById('posttestAnswerInput').value; if(postCurrentIndex<14){ postCurrentIndex++; updatePosttest(); } else alert("Last question. Click SUBMIT."); }
+        function prevPosttest() { if(postTestSubmitted) return; postUserAnswers[postCurrentIndex]=document.getElementById('posttestAnswerInput').value; if(postCurrentIndex>0){ postCurrentIndex--; updatePosttest(); } else alert("First question."); }
+        function submitPosttest() { if(postTestSubmitted) return; if(postTimerInterval) clearInterval(postTimerInterval); postUserAnswers[postCurrentIndex]=document.getElementById('posttestAnswerInput').value; let score=0; for(let i=0;i<15;i++){ let user=(postUserAnswers[i]||'').toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let correct=postAns[i].toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); if(user===correct) score++; } postTestSubmitted=true; let percentage=(score/15*100).toFixed(1); let rating=score>=14?"🏆 EXCELLENT!":score>=12?"🌟 VERY GOOD!":score>=10?"👍 GOOD!":score>=8?"📚 FAIR!":"💪 NEEDS IMPROVEMENT!"; document.getElementById('posttest-score').innerHTML=`🎯 Score: ${score}/15 (${percentage}%)<br>${rating}`; let answerKeyHtml = '<h3>📋 ANSWER KEY</h3><ol>'; for(let i=0;i<15;i++){ answerKeyHtml += `<li>${postExpr[i]} = ${postAns[i]}</li>`; } answerKeyHtml += '</ol>'; document.getElementById('posttest-answer-key').innerHTML = answerKeyHtml; document.getElementById('posttest-answer-key').style.display = 'block'; alert(`Post-test completed!\nScore: ${score}/15\nCheck the answer key below.`); }
+        updatePosttest();
+
+        const gameProblemsList = [ { expr: "(4y - 8z + 3) + (-4y + 3z - 5)", answer: "-5z-2" }, { expr: "(5x⁴ - 6x + 4) - (2x⁴ - 9x - 6)", answer: "3x⁴+3x+10" }, { expr: "(-8x² + 2 - 4y) + (4x² - 2y + 2z + 1)", answer: "-4x²-6y+2z+3" }, { expr: "(-3z³ + 7z² - 5y + 6) - (5z² - 3y - 1)", answer: "-3z³+2z²+8y+7" }, { expr: "(4y³ - 4y² - 3z + 7) - (7y³ + 3y + 3)", answer: "-3y³-4y²-3y-3z+4" } ];
+        let gameCurrentIdx=0, gameSeconds=20*60, gameTimerInterval=null, gameCorrectOnCurrent=false, gameTimerStarted=false;
+        function buildGamePalette() { const cols={x:'blue',y:'orange',z:'green',c:'brown'}; for(let t of ['x','y','z','c']){ let c=document.getElementById(`game-palette-${t}`); if(c){ c.innerHTML=''; if(t==='c'){ let pos=document.createElement('span'); pos.className='block block-brown block-power1'; pos.draggable=true; pos.ondragstart=drag; pos.id='game_cpos'; let neg=document.createElement('span'); neg.className='block block-brown block-outline block-power1'; neg.draggable=true; neg.ondragstart=drag; neg.id='game_cneg'; c.append(pos,neg); } else { for(let i=1;i<=4;i++){ let pos=document.createElement('span'); pos.className=`block block-${cols[t]} block-power${i}`; pos.draggable=true; pos.ondragstart=drag; pos.id=`game_${t}pos_p${i}`; let neg=document.createElement('span'); neg.className=`block block-${cols[t]} block-outline block-power${i}`; neg.draggable=true; neg.ondragstart=drag; neg.id=`game_${t}neg_p${i}`; c.append(pos,neg); } } } } }
+        function startGameTimer() { if(!gameTimerStarted && gameSeconds>0){ gameTimerStarted=true; gameTimerInterval=setInterval(()=>{ if(gameSeconds<=0){ clearInterval(gameTimerInterval); document.getElementById('gameFeedback').innerHTML="⏰ TIME'S UP!"; document.getElementById('gameFeedback').style.display='block'; return; } gameSeconds--; let m=Math.floor(gameSeconds/60), s=gameSeconds%60; document.getElementById('gameTimerDisplay').innerHTML=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; },1000); } }
+        function updateGameDisplay() { document.getElementById('gameProblemNum').innerHTML=gameCurrentIdx+1; document.getElementById('gameQuestionText').innerHTML=gameProblemsList[gameCurrentIdx].expr; clearGameColumns(); document.getElementById('gameFeedback').style.display='none'; document.getElementById('gameNextBtn').style.display='none'; document.getElementById('gameAnswerInput').disabled=false; document.getElementById('gameAnswerInput').value=''; gameCorrectOnCurrent=false; gameUndoStack=[]; }
+        function checkGameAnswer(){ if(gameCorrectOnCurrent){ document.getElementById('gameFeedback').innerHTML='✅ Already correct!'; return; } if(!gameTimerStarted) startGameTimer(); let user=document.getElementById('gameAnswerInput').value.trim().toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let correct=gameProblemsList[gameCurrentIdx].answer.toLowerCase().replace(/\s/g,'').replace(/−/g,'-'); let fb=document.getElementById('gameFeedback'); if(user===correct){ fb.className='feedback correct'; fb.innerHTML='✅ CORRECT! Next →'; fb.style.display='block'; gameCorrectOnCurrent=true; document.getElementById('gameNextBtn').style.display='inline-block'; document.getElementById('gameAnswerInput').disabled=true; } else { fb.className='feedback incorrect'; fb.innerHTML='❌ Incorrect, try again.'; fb.style.display='block'; } }
+        function nextGameProblem(){ if(!gameCorrectOnCurrent){ alert("Please answer correctly first!"); return; } if(gameCurrentIdx+1<gameProblemsList.length){ gameCurrentIdx++; updateGameDisplay(); } else { clearInterval(gameTimerInterval); let elapsed=20*60-gameSeconds; let min=Math.floor(elapsed/60), sec=elapsed%60; document.getElementById('finalGameTime').innerHTML=`${min} min ${sec} sec`; document.getElementById('gameComplete').style.display='block'; document.getElementById('gameAnswerInput').disabled=true; } }
+        function resetGame(){ gameCurrentIdx=0; gameSeconds=20*60; gameCorrectOnCurrent=false; gameTimerStarted=false; if(gameTimerInterval) clearInterval(gameTimerInterval); gameTimerInterval=null; document.getElementById('gameTimerDisplay').innerHTML="20:00"; document.getElementById('gameComplete').style.display='none'; document.getElementById('gameAnswerInput').disabled=false; updateGameDisplay(); buildGamePalette(); }
+        buildGamePalette(); updateGameDisplay();
+    </script>
+</body>
+</html>
